@@ -170,6 +170,18 @@ const MeetingCard = ({
     }
   };
 
+  const copyMeetingLink = () => {
+    // Sadece /meeting/ kısmından sonrasını kopyala
+    const meetingId = link.split('/meeting/')[1];
+    const shortLink = `/meeting/${meetingId}`;
+    
+    navigator.clipboard.writeText(shortLink);
+    toast({
+      title: "Meeting link copied!",
+      description: "Share this link with your participants",
+    });
+  };
+
   return (
     <section className="flex min-h-[258px] w-full flex-col justify-between rounded-[14px] bg-dark-1 px-5 py-8 xl:max-w-[568px]">
       <article className="flex flex-col gap-5">
@@ -221,21 +233,16 @@ const MeetingCard = ({
               </Button>
             )}
             <Button
-              onClick={() => {
-                navigator.clipboard.writeText(link);
-                toast({
-                  title: "Link Copied",
-                });
-              }}
+              onClick={copyMeetingLink}
               className="bg-dark-4 px-6"
             >
               <Image
                 src="/icons/copy.svg"
-                alt="feature"
+                alt="copy link"
                 width={20}
                 height={20}
               />
-              &nbsp; Copy Link
+              &nbsp; Copy Short Link
             </Button>
           </div>
         )}

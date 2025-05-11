@@ -65,6 +65,18 @@ const MeetingTypeList = () => {
     }
   };
 
+  const copyMeetingLink = () => {
+    if (!callDetail?.id) return;
+    
+    const shortLink = `/meeting/${callDetail.id}`;
+    navigator.clipboard.writeText(shortLink);
+    
+    toast({
+      title: "Meeting link copied!",
+      description: "Share this link with your participants",
+    });
+  };
+
   if (!client || !user) return <Loader />;
 
   const meetingLink = `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${callDetail?.id}`;
@@ -138,14 +150,11 @@ const MeetingTypeList = () => {
           isOpen={meetingState === 'isScheduleMeeting'}
           onClose={() => setMeetingState(undefined)}
           title="Meeting Created"
-          handleClick={() => {
-            navigator.clipboard.writeText(meetingLink);
-            toast({ title: 'Link Copied' });
-          }}
+          handleClick={copyMeetingLink}
           image={'/icons/checked.svg'}
           buttonIcon="/icons/copy.svg"
           className="text-center"
-          buttonText="Copy Meeting Link"
+          buttonText="Copy Short Link"
         />
       )}
 

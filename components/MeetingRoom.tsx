@@ -10,7 +10,7 @@ import {
   useCallStateHooks,
 } from '@stream-io/video-react-sdk';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Users, LayoutList } from 'lucide-react';
+import { Users, LayoutList, Share2 } from 'lucide-react';
 
 import {
   DropdownMenu,
@@ -22,6 +22,8 @@ import {
 import Loader from './Loader';
 import EndCallButton from './EndCallButton';
 import { cn } from '@/lib/utils';
+import { useToast } from './ui/use-toast';
+import { useCall } from '@stream-io/video-react-sdk';
 
 type CallLayoutType = 'grid' | 'speaker-left' | 'speaker-right';
 
@@ -32,6 +34,8 @@ const MeetingRoom = () => {
   const [layout, setLayout] = useState<CallLayoutType>('speaker-left');
   const [showParticipants, setShowParticipants] = useState(false);
   const { useCallCallingState } = useCallStateHooks();
+  const { toast } = useToast();
+  const call = useCall();
 
   // for more detail about types of CallingState see: https://getstream.io/video/docs/react/ui-cookbook/ringing-call/#incoming-call-panel
   const callingState = useCallCallingState();
@@ -47,6 +51,18 @@ const MeetingRoom = () => {
       default:
         return <SpeakerLayout participantsBarPosition="right" />;
     }
+  };
+
+  const copyMeetingLink = () => {
+    if (!call?.id) return;
+    
+    const shortLink = `/meeting/${call.id}`;
+    navigator.clipboard.writeText(shortLink);
+    
+    toast({
+      title: "Meeting link copied!",
+      description: "Share this link with your participants",
+    });
   };
 
   return (
@@ -69,7 +85,7 @@ const MeetingRoom = () => {
 
         <DropdownMenu>
           <div className="flex items-center">
-            <DropdownMenuTrigger className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]  ">
+            <DropdownMenuTrigger className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]">
               <LayoutList size={20} className="text-white" />
             </DropdownMenuTrigger>
           </div>
@@ -88,9 +104,18 @@ const MeetingRoom = () => {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Share Link Button */}
+        <button 
+          onClick={copyMeetingLink}
+          className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]"
+        >
+          <Share2 size={20} className="text-white" />
+        </button>
+
         <CallStatsButton />
         <button onClick={() => setShowParticipants((prev) => !prev)}>
-          <div className=" cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]  ">
+          <div className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]">
             <Users size={20} className="text-white" />
           </div>
         </button>
