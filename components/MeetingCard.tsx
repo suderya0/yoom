@@ -16,6 +16,7 @@ interface MeetingCardProps {
   buttonText?: string;
   handleClick: () => void;
   link: string;
+  isRecording?: boolean;
 }
 
 const MeetingCard = ({
@@ -27,8 +28,147 @@ const MeetingCard = ({
   handleClick,
   link,
   buttonText,
+  isRecording,
 }: MeetingCardProps) => {
   const { toast } = useToast();
+
+  const downloadAudio = async () => {
+    try {
+      // Show loading toast
+      toast({
+        title: "Preparing audio download...",
+        description: "This may take a moment",
+      });
+
+      // Create video element
+      const video = document.createElement('video');
+      video.crossOrigin = 'anonymous';
+      video.src = link;
+      video.muted = true;
+
+      // Wait for video to be loaded
+      await new Promise((resolve, reject) => {
+        video.onloadedmetadata = resolve;
+        video.onerror = reject;
+      });
+
+      // Create audio context
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const source = audioContext.createMediaElementSource(video);
+      
+      // Create gain node to control volume
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = 1.0;
+      
+      // Create destination for recording
+      const destination = audioContext.createMediaStreamDestination();
+      
+      // Connect nodes
+      source.connect(gainNode);
+      gainNode.connect(destination);
+      gainNode.connect(audioContext.destination);
+
+      // Create MediaRecorder with specific audio settings
+      const mediaRecorder = new MediaRecorder(destination.stream, {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 128000
+      });
+
+      const audioChunks: Blob[] = [];
+      let isRecording = false;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        if (audioChunks.length === 0) {
+          toast({
+            title: "No audio detected",
+            description: "The recording might not contain any audio",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        // Create a file input element to trigger the save dialog
+        const downloadLink = document.createElement('a');
+        downloadLink.href = audioUrl;
+        downloadLink.download = `${title}-audio.webm`;
+        
+        // Show save dialog
+        const saveDialog = document.createElement('input');
+        saveDialog.type = 'file';
+        saveDialog.nwsaveas = `${title}-audio.webm`; // This is for NW.js, you might need a different approach
+        saveDialog.style.display = 'none';
+        document.body.appendChild(saveDialog);
+
+        // Trigger the save dialog
+        saveDialog.click();
+
+        // Clean up
+        document.body.removeChild(saveDialog);
+        URL.revokeObjectURL(audioUrl);
+        
+        toast({
+          title: "Audio ready to save",
+          description: "Please choose where to save the file",
+        });
+      };
+
+      // Start recording when video starts playing
+      video.onplay = () => {
+        if (!isRecording) {
+          mediaRecorder.start();
+          isRecording = true;
+        }
+      };
+
+      // Stop recording when video ends
+      video.onended = () => {
+        if (isRecording) {
+          mediaRecorder.stop();
+          isRecording = false;
+          audioContext.close();
+        }
+      };
+
+      // Handle errors
+      video.onerror = (error) => {
+        console.error('Video error:', error);
+        toast({
+          title: "Error processing recording",
+          description: "Please try again later",
+          variant: "destructive"
+        });
+      };
+
+      // Start playing the video
+      try {
+        await video.play();
+      } catch (error) {
+        console.error('Playback error:', error);
+        toast({
+          title: "Error playing recording",
+          description: "Please try again later",
+          variant: "destructive"
+        });
+      }
+
+    } catch (error) {
+      console.error('Error downloading audio:', error);
+      toast({
+        title: "Error downloading audio",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <section className="flex min-h-[258px] w-full flex-col justify-between rounded-[14px] bg-dark-1 px-5 py-8 xl:max-w-[568px]">
@@ -66,6 +206,20 @@ const MeetingCard = ({
               )}
               &nbsp; {buttonText}
             </Button>
+            {isRecording && (
+              <Button
+                onClick={downloadAudio}
+                className="rounded bg-green-500 px-6"
+              >
+                <Image
+                  src="/icons/download.svg"
+                  alt="download audio"
+                  width={20}
+                  height={20}
+                />
+                &nbsp; Download Audio
+              </Button>
+            )}
             <Button
               onClick={() => {
                 navigator.clipboard.writeText(link);

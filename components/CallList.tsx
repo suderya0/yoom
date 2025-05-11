@@ -93,6 +93,7 @@ const CallList = ({ type }: { type: 'ended' | 'upcoming' | 'recordings' }) => {
             }
             buttonIcon1={type === 'recordings' ? '/icons/play.svg' : undefined}
             buttonText={type === 'recordings' ? 'Play' : 'Start'}
+            isRecording={type === 'recordings'}
             handleClick={
               type === 'recordings'
                 ? () => router.push(`${(meeting as CallRecording).url}`)
