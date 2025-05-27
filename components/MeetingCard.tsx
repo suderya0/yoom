@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
@@ -17,6 +18,7 @@ interface MeetingCardProps {
   handleClick: () => void;
   link: string;
   isRecording?: boolean;
+  summary?: string;
 }
 
 const MeetingCard = ({
@@ -29,8 +31,10 @@ const MeetingCard = ({
   link,
   buttonText,
   isRecording,
+  summary,
 }: MeetingCardProps) => {
   const { toast } = useToast();
+  const [showSummary, setShowSummary] = useState(false);
 
   const downloadAudio = async () => {
     try {
@@ -104,7 +108,7 @@ const MeetingCard = ({
         // Show save dialog
         const saveDialog = document.createElement('input');
         saveDialog.type = 'file';
-        saveDialog.nwsaveas = `${title}-audio.webm`; // This is for NW.js, you might need a different approach
+        //saveDialog.nwsaveas = `${title}-audio.webm`; // This is for NW.js, you might need a different approach
         saveDialog.style.display = 'none';
         document.body.appendChild(saveDialog);
 
@@ -193,6 +197,14 @@ const MeetingCard = ({
           </div>
         </div>
       </article>
+
+      {showSummary && summary && (
+        <div className="mt-4 p-4 bg-dark-3 rounded-lg">
+          <h2 className="text-lg font-semibold mb-2">Meeting Summary</h2>
+          <p className="text-sm text-gray-300">{summary}</p>
+        </div>
+      )}
+
       <article className={cn("flex justify-center relative", {})}>
         <div className="relative flex w-full max-sm:hidden">
           {avatarImages.map((img, index) => (
@@ -230,6 +242,20 @@ const MeetingCard = ({
                   height={20}
                 />
                 &nbsp; Download Audio
+              </Button>
+            )}
+            {summary && (
+              <Button
+                onClick={() => setShowSummary(!showSummary)}
+                className="bg-purple-1 px-6"
+              >
+                <Image
+                  src="/icons/summary.svg"
+                  alt="show summary"
+                  width={20}
+                  height={20}
+                />
+                &nbsp; {showSummary ? 'Hide Summary' : 'Show Summary'}
               </Button>
             )}
             <Button
